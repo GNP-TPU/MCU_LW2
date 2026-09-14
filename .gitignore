@@ -1,0 +1,31 @@
+*.o
+*.d
+*.crf
+*.dep
+/Debug/
+/Release/
+.clangd
+
+# Игнорировать все файлы с расширением
+*.json
+*.txt
+*.log
+*.yml
+
+# Файлы конфигурации отладчика CMSIS/CubeMX
+*.dbgconf
+*.dbgconf.*
+
+# Полностью игнорировать папки сборки и временных файлов
+/out/
+/tmp/
+
+*.sct.src
+
+**/Drivers/CMSIS/Include/
+**/Drivers/STM32F4xx_HAL_Driver/
+**/MDK-ARM/
+**/cmake/
+
+*.script
+
