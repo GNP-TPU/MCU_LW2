@@ -57,14 +57,14 @@ void Flush_Flash_Cache(void) {
     if (current_cached_sector_addr == -1) return;
 
     // ERASE: Стираем один раз физический 4 КБ сектор
-    SectorErase(&MyFlash, current_cached_sector_addr);
-    while(IsBusy(&MyFlash));
+    W25Q_SectorErase(&MyFlash, current_cached_sector_addr);
+    while(W25Q_IsBusy(&MyFlash));
 
     // WRITE: Записываем весь 4 КБ кэш обратно (16 страниц по 256 байт)
     for (uint32_t i = 0; i < 16; i++) {
         uint32_t page_address = current_cached_sector_addr + (i * 256);
-        PageProgram(&MyFlash, &flash_cache_buffer[i * 256], page_address, 256);
-        while(IsBusy(&MyFlash));
+        W25Q_PageProgram(&MyFlash, &flash_cache_buffer[i * 256], page_address, 256);
+        while(W25Q_IsBusy(&MyFlash));
     }
 
     // Помечаем кэш как пустой
@@ -72,55 +72,34 @@ void Flush_Flash_Cache(void) {
 }
 
 void USB_MSC_Background_Process(void) {
-    // === ЛОГИКА ЧТЕНИЯ (уже созданная ранее) ===
+	// Логика чтения
     if (msc_read_request) {
-        FastRead(&MyFlash, msc_sector_buffer, msc_requested_lba * STORAGE_SECTOR_SIZE, STORAGE_SECTOR_SIZE);
+        W25Q_FastRead(&MyFlash, msc_sector_buffer, msc_requested_lba * STORAGE_SECTOR_SIZE, STORAGE_SECTOR_SIZE);
         msc_read_request = 0;
         uint32_t chunk = (msc_remaining_bytes > 64) ? 64 : msc_remaining_bytes;
         msc_remaining_bytes -= chunk;
         USB_EP_Tx(1, msc_sector_buffer, chunk); 
     }
-
-    // === НОВАЯ ЛОГИКА ЗАПИСИ ===
+	// Логика записи
     if (msc_write_request) {
-        // 1. Находим физический адрес начала 4 КБ сектора флешки (округляем вниз до 4096)
+        // Находим физический адрес начала 4 КБ сектора флешки (округляем вниз до 4096)
 		uint32_t flash_sector_address = (msc_write_lba * STORAGE_SECTOR_SIZE) & 0xFFFFF000;
 		
-		// 2. Вычисляем смещение (индекс) внутри 4 КБ кэша, куда запишутся новые 512 байт
+		// Вычисляем смещение (индекс) внутри 4 КБ кэша, куда запишутся новые 512 байт
 		uint32_t cache_offset = (msc_write_lba % 8) * STORAGE_SECTOR_SIZE;
 
 		if (current_cached_sector_addr != -1 && current_cached_sector_addr != flash_sector_address) {
-            // ФУНКЦИЯ СБРОСА КЭША (Вынесена вниз для читаемости)
+            // Сброс кэша
             Flush_Flash_Cache(); 
         }
 
 		if (current_cached_sector_addr == -1) {
-            FastRead(&MyFlash, flash_cache_buffer, flash_sector_address, 4096);
+            W25Q_FastRead(&MyFlash, flash_cache_buffer, flash_sector_address, 4096);
             current_cached_sector_addr = flash_sector_address;
         }
 
-		// 3. READ: Считываем весь 4 КБ сектор из флешки в буфер ОЗУ
-		// FastRead(&MyFlash, flash_cache_buffer, flash_sector_address, 4096);
-
-		// 4. MODIFY: Копируем новые 512 байт от ПК поверх старых данных в буфере кэша
+		// Копируем новые 512 байт от ПК поверх старых данных в буфере кэша
 		memcpy(&flash_cache_buffer[cache_offset], msc_sector_buffer, STORAGE_SECTOR_SIZE);
-
-		// 5. ERASE: Стираем физический 4 КБ сектор на флешке
-		//SectorErase(&MyFlash, flash_sector_address);
-		
-		// !!! ВАЖНО !!! Ожидание завершения стирания. Подставьте вашу функцию ожидания, если она есть
-		// Например: W25Q_Wait_Ready(&MyFlash); или HAL_Delay(50);
-		// while(IsBusy(&MyFlash));
-
-		// 6. WRITE: Записываем весь 4 КБ кэш обратно во флешку частями по 256 байт (16 страниц)
-		/*
-		for (uint32_t i = 0; i < 16; i++) {
-			uint32_t page_address = flash_sector_address + (i * 256);
-			PageProgram(&MyFlash, &flash_cache_buffer[i * 256], page_address, 256);
-			
-			// Ждем окончания программирования каждой страницы
-			while(IsBusy(&MyFlash));
-		}*/
 
         // Сбрасываем флаг запроса
         msc_write_request = 0;
@@ -157,7 +136,7 @@ int main(void){
 	
 	char hex_str[100];
 
-	uint32_t val = ReadID(&MyFlash);
+	uint32_t val = W25Q_ReadID(&MyFlash);
 	sprintf(hex_str, "0x%06X", val);
 	USART_SendString(USART1, hex_str);
 	delay_ms(1000);
@@ -169,12 +148,12 @@ int main(void){
 
 	// PageProgram(&MyFlash, FlashBuf, 0x00000000, 64);
 
-	USB_Core_Init();
+	//USB_Core_Init();
 	
 	while(1){
 		
 
-		USB_MSC_Background_Process();
+		//USB_MSC_Background_Process();
 		/*
 		char hex_str[100];
 

@@ -1,7 +1,9 @@
-#ifndef W25Q_HPP
-#define W25Q_HPP
+#ifndef W25Q_H
+#define W25Q_H
 
-#include "SPI.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #define W25Q_GET_JEDEC_ID                   0x9f
 
@@ -12,16 +14,16 @@
 #define W25Q_WRITE_DISABLE                  0x04
 #define W25Q_WRITE_ENABLE                   0x06
 
-#define W25Q_PAGE_PROGRAM                   0X02
+#define W25Q_PAGE_PROGRAM                   0x02
 
-#define W25Q_READ_DATA                      0X03
-#define W25Q_FAST_READ                      0X0B
+#define W25Q_READ_DATA                      0x03
+#define W25Q_FAST_READ                      0x0B
 
-#define W25Q_SECTOR_ERASE                   0X20
-#define W25Q_32K_BLOCK_ERASE                0X52
-#define W25Q_64K_BLOCK_ERASE                0XD8
+#define W25Q_SECTOR_ERASE                   0x20
+#define W25Q_32K_BLOCK_ERASE                0x52
+#define W25Q_64K_BLOCK_ERASE                0xD8
 
-#define W25Q_CHIP_ERASE                     0XC7
+#define W25Q_CHIP_ERASE                     0xC7
 
 typedef struct{
     void    (*W25Q_Select)(bool);
@@ -29,23 +31,23 @@ typedef struct{
     uint8_t (*W25Q_SPI_Read)(void);
 }W25Q_t;
 
-void WriteEnable(W25Q_t*);
-void WriteDisable(W25Q_t*);
+void W25Q_WriteEnable(W25Q_t*);
+void W25Q_WriteDisable(W25Q_t*);
 
-void ReadData(W25Q_t*, uint8_t* buf, uint32_t address, uint32_t size);
-void FastRead(W25Q_t*, uint8_t* buf, uint32_t address, uint32_t size);
+void W25Q_ReadData(W25Q_t*, uint8_t* buf, uint32_t address, uint32_t size);
+void W25Q_FastRead(W25Q_t*, uint8_t* buf, uint32_t address, uint32_t size);
 
-void PageProgram(W25Q_t*, uint8_t* buf, uint32_t address, uint32_t size);
-void MultiPageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size);
+void W25Q_PageProgram(W25Q_t*, uint8_t* buf, uint32_t address, uint32_t size);
+void W25Q_MultiPageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size);
 
-void SectorErase(W25Q_t*, uint32_t address);
-void BlockErase(W25Q_t*, uint32_t address);
-void ChipErase(W25Q_t*);
+void W25Q_SectorErase(W25Q_t*, uint32_t address);
+void W25Q_BlockErase(W25Q_t*, uint32_t address);
+void W25Q_ChipErase(W25Q_t*);
 
-uint8_t ReadStatusRegister(W25Q_t*, uint8_t reg);
-bool IsBusy(W25Q_t*);
+uint8_t W25Q_ReadStatusRegister(W25Q_t*, uint8_t reg);
+bool W25Q_IsBusy(W25Q_t*);
 
-uint32_t ReadID(W25Q_t*);
+uint32_t W25Q_ReadID(W25Q_t*);
 
 /* // Прошлый вариант для .cpp
 class W25Q{
@@ -233,4 +235,4 @@ public:
 };
 */
 
-#endif
+#endif /* W25Q_H */

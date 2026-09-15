@@ -7,21 +7,21 @@ void W25Q_Init(W25Q_t* self, void (*select_func)(bool), void (*write_func)(uint8
     self->W25Q_SPI_Read  = read_func;
 }
 
-void WriteEnable(W25Q_t* self){
+void W25Q_WriteEnable(W25Q_t* self){
     self->W25Q_Select(true);
     uint8_t cmd = W25Q_WRITE_ENABLE;
     self->W25Q_SPI_Write(cmd);
     self->W25Q_Select(false);
 }
 
-void WriteDisable(W25Q_t* self){
+void W25Q_WriteDisable(W25Q_t* self){
     self->W25Q_Select(true);
     uint8_t cmd = W25Q_WRITE_DISABLE;
     self->W25Q_SPI_Write(cmd);
     self->W25Q_Select(false);
 }
 
-void ReadData(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
+void W25Q_ReadData(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     self->W25Q_Select(true);
 
     uint8_t cmd = W25Q_READ_DATA;
@@ -37,7 +37,7 @@ void ReadData(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     self->W25Q_Select(false);
 }
 
-void FastRead(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
+void W25Q_FastRead(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     self->W25Q_Select(true);
     uint8_t cmd = W25Q_FAST_READ;
     self->W25Q_SPI_Write(cmd);
@@ -52,13 +52,13 @@ void FastRead(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     self->W25Q_Select(false);
 }
 
-void PageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
+void W25Q_PageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     if(size >= 256){
         address &= 0xFFFFFF00;
         size = 256;
     }
 
-    WriteEnable(self);
+    W25Q_WriteEnable(self);
 
     self->W25Q_Select(true);
     uint8_t cmd = W25Q_PAGE_PROGRAM;
@@ -72,13 +72,13 @@ void PageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     self->W25Q_Select(false);
 }
 
-void MultiPageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
+void W25Q_MultiPageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t size){
     if(size >= 256){
         address &= 0xFFFFFF00;
         size = 256;
     }
 
-    WriteEnable(self);
+    W25Q_WriteEnable(self);
 
     self->W25Q_Select(true);
     uint8_t cmd = W25Q_PAGE_PROGRAM;
@@ -92,10 +92,10 @@ void MultiPageProgram(W25Q_t* self, uint8_t* buf, uint32_t address, uint32_t siz
     self->W25Q_Select(false);
 }
 
-void SectorErase(W25Q_t* self, uint32_t address){
+void W25Q_SectorErase(W25Q_t* self, uint32_t address){
     address &= 0xFFFFF000;  
 
-    WriteEnable(self);
+    W25Q_WriteEnable(self);
 
     self->W25Q_Select(true);
 
@@ -108,10 +108,10 @@ void SectorErase(W25Q_t* self, uint32_t address){
     self->W25Q_Select(false);
 }
 
-void BlockErase(W25Q_t* self, uint32_t address){
+void W25Q_BlockErase(W25Q_t* self, uint32_t address){
     address &= 0xFFFF0000;  
 
-    WriteEnable(self);
+    W25Q_WriteEnable(self);
 
     self->W25Q_Select(true);
 
@@ -124,8 +124,8 @@ void BlockErase(W25Q_t* self, uint32_t address){
     self->W25Q_Select(false);
 }
 
-void ChipErase(W25Q_t* self){
-    WriteEnable(self);
+void W25Q_ChipErase(W25Q_t* self){
+    W25Q_WriteEnable(self);
 
     self->W25Q_Select(true);
 
@@ -135,7 +135,7 @@ void ChipErase(W25Q_t* self){
     self->W25Q_Select(false);
 }
 
-uint8_t ReadStatusRegister(W25Q_t* self, uint8_t reg){
+uint8_t W25Q_ReadStatusRegister(W25Q_t* self, uint8_t reg){
     self->W25Q_Select(true);
         
     uint8_t cmd = 0; 
@@ -163,17 +163,17 @@ uint8_t ReadStatusRegister(W25Q_t* self, uint8_t reg){
     return reg;
 }
 
-bool IsBusy(W25Q_t* self){
-    if(ReadStatusRegister(self, 1)){
+bool W25Q_IsBusy(W25Q_t* self){
+    if(W25Q_ReadStatusRegister(self, 1)){
         return true;
     }
     return false;
 }
 
-uint32_t ReadID(W25Q_t* self){
+uint32_t W25Q_ReadID(W25Q_t* self){
     if (self == NULL || self->W25Q_Select == NULL || 
         self->W25Q_SPI_Write == NULL || self->W25Q_SPI_Read == NULL) {
-        return 0xDEADBEEF; // Увидите это в UART — значит указатели пустые!
+        return 0xDEADBEEF;
     }
     
     uint32_t id;
