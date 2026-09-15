@@ -134,17 +134,73 @@ int main(void){
 	SPI_Configure();
 	USART_Configure();
 	
-	char hex_str[100];
+	char hex_str[200];
 
 	uint32_t val = W25Q_ReadID(&MyFlash);
 	sprintf(hex_str, "0x%06X", val);
 	USART_SendString(USART1, hex_str);
 	delay_ms(1000);
 
-	uint8_t FlashBuf[64];
+	W25Q_ChipErase(&MyFlash);
+	uint32_t erase_start_ms = get_ms();
 
-	for(uint8_t i = 0; i < 64; i++)
-		FlashBuf[i] = i;
+	sprintf(hex_str, "Началась полная очистка W25Q, подождите...");
+	USART_SendString(USART1, hex_str);
+
+	while(W25Q_IsBusy(&MyFlash)){
+	}
+
+	uint32_t erase_stop_ms = get_ms();
+
+	sprintf(hex_str, "W25Q очищена, время очистки: %u ms", erase_stop_ms - erase_start_ms);
+	USART_SendString(USART1, hex_str);
+
+	sprintf(hex_str, "Выполняется тестовая запись в 0 сектор, 2 страницы. Подождите...");
+	USART_SendString(USART1, hex_str);
+
+	uint8_t tx_buffer[256];
+
+	for(uint16_t i = 0; i < 256; i++){
+		tx_buffer[i] = i;
+	}
+
+	uint32_t page_address = 0x00000000;
+
+	erase_start_ms = get_ms();
+	for (uint32_t i = 0; i < 2; i++) {
+        page_address = i * 256;
+        W25Q_PageProgram(&MyFlash, tx_buffer, page_address, 256);
+        while(W25Q_IsBusy(&MyFlash));
+    }
+	erase_stop_ms = get_ms();
+
+	sprintf(hex_str, "Запись выполнена, время записи двух страниц: %u ms", erase_stop_ms - erase_start_ms);
+	USART_SendString(USART1, hex_str);
+
+	sprintf(hex_str, "Проверка корректности записи первой страницы.");
+	USART_SendString(USART1, hex_str);
+
+	
+
+	bool correct_flag = true;
+	for(uint8_t page = 0; page < 2; page++){
+		uint8_t rx_buffer[256];
+		W25Q_FastRead(&MyFlash, rx_buffer, page * 256, 256);
+		for(uint16_t i = 0; i < 256; i++){
+			if(rx_buffer[i] != tx_buffer[i]){
+				correct_flag = false;
+				sprintf(hex_str, "Ошибка данных на странице %d, смещение 0x%02X", page, i);
+				USART_SendString(USART1, hex_str);
+				break;
+			}
+		}	
+	}
+
+	if(correct_flag){
+		sprintf(hex_str, "Все записи в странице совпали с отправленными");
+		USART_SendString(USART1, hex_str);
+	}
+	
 
 	// PageProgram(&MyFlash, FlashBuf, 0x00000000, 64);
 
