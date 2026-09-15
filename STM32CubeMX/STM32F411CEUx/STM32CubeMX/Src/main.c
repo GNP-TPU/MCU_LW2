@@ -37,20 +37,11 @@ extern volatile uint32_t msc_requested_lba;
 
 extern volatile uint8_t  msc_scsi_cmd;
 
-
 extern volatile uint32_t msc_remaining_bytes;
 extern __ALIGN4 uint8_t msc_sector_buffer[1024];
 
 __ALIGN4 static uint8_t flash_cache_buffer[4096]; 
 int32_t current_cached_sector_addr = -1; // -1 означает, что кэш пуст
-
-/*
-W25Q MyFlash(
-	__SPI_Select,
-	__SPI_Write,
-	__SPI_Read
-);
-*/
 
 // Обработка стирания сектора 1 раз
 void Flush_Flash_Cache(void) {
@@ -133,109 +124,11 @@ int main(void){
 	GPIO_Configure();
 	SPI_Configure();
 	USART_Configure();
-	
-	char hex_str[200];
 
-	uint32_t val = W25Q_ReadID(&MyFlash);
-	sprintf(hex_str, "0x%06X", val);
-	USART_SendString(USART1, hex_str);
-	delay_ms(1000);
-
-	W25Q_ChipErase(&MyFlash);
-	uint32_t erase_start_ms = get_ms();
-
-	sprintf(hex_str, "Началась полная очистка W25Q, подождите...");
-	USART_SendString(USART1, hex_str);
-
-	while(W25Q_IsBusy(&MyFlash)){
-	}
-
-	uint32_t erase_stop_ms = get_ms();
-
-	sprintf(hex_str, "W25Q очищена, время очистки: %u ms", erase_stop_ms - erase_start_ms);
-	USART_SendString(USART1, hex_str);
-
-	sprintf(hex_str, "Выполняется тестовая запись в 0 сектор, 2 страницы. Подождите...");
-	USART_SendString(USART1, hex_str);
-
-	uint8_t tx_buffer[256];
-
-	for(uint16_t i = 0; i < 256; i++){
-		tx_buffer[i] = i;
-	}
-
-	uint32_t page_address = 0x00000000;
-
-	erase_start_ms = get_ms();
-	for (uint32_t i = 0; i < 2; i++) {
-        page_address = i * 256;
-        W25Q_PageProgram(&MyFlash, tx_buffer, page_address, 256);
-        while(W25Q_IsBusy(&MyFlash));
-    }
-	erase_stop_ms = get_ms();
-
-	sprintf(hex_str, "Запись выполнена, время записи двух страниц: %u ms", erase_stop_ms - erase_start_ms);
-	USART_SendString(USART1, hex_str);
-
-	sprintf(hex_str, "Проверка корректности записи первой страницы.");
-	USART_SendString(USART1, hex_str);
-
-	
-
-	bool correct_flag = true;
-	for(uint8_t page = 0; page < 2; page++){
-		uint8_t rx_buffer[256];
-		W25Q_FastRead(&MyFlash, rx_buffer, page * 256, 256);
-		for(uint16_t i = 0; i < 256; i++){
-			if(rx_buffer[i] != tx_buffer[i]){
-				correct_flag = false;
-				sprintf(hex_str, "Ошибка данных на странице %d, смещение 0x%02X", page, i);
-				USART_SendString(USART1, hex_str);
-				break;
-			}
-		}	
-	}
-
-	if(correct_flag){
-		sprintf(hex_str, "Все записи в странице совпали с отправленными");
-		USART_SendString(USART1, hex_str);
-	}
-	
-
-	// PageProgram(&MyFlash, FlashBuf, 0x00000000, 64);
-
-	//USB_Core_Init();
+	USB_Core_Init();
 	
 	while(1){
-		
-
-		//USB_MSC_Background_Process();
-		/*
-		char hex_str[100];
-
-		uint32_t val = MyFlash.ReadID();
-
-		sprintf(hex_str, "0x%06X", val);
-		USART_SendString(USART1, hex_str);
-		delay_ms(1000);
-
-		bool busy_flag = MyFlash.IsBusy();
-		sprintf(hex_str, "Chip Business: %01X", busy_flag);
-		USART_SendString(USART1, hex_str);
-		delay_ms(1000);
-
-		
-
-		/*
-		sprintf(hex_str, "Erasing Chip");
-		USART_SendString(USART1, hex_str);
-		MyFlash.ChipErase();
-		while(MyFlash.IsBusy()){
-			sprintf(hex_str, ".");
-			USART_SendString(USART1, hex_str);
-		}
-		delay_ms(10000);
-		*/
+		USB_MSC_Background_Process();
 	}
 
 }
